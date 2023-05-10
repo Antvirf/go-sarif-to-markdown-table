@@ -20,3 +20,6 @@ test.sarif
 
 # Go workspace file
 go.work
+
+# Ignore default output binary
+sarif-to-markdown-table
