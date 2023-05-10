@@ -48,7 +48,7 @@ func main() {
 
 	// Sort by severity
 	tw.SortBy([]table.SortBy{
-		{Name: "Severity", Mode: table.Asc},
+		{Name: "Severity", Mode: table.DscNumeric},
 	})
 
 	// Output
