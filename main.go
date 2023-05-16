@@ -11,8 +11,6 @@ import (
 )
 
 func main() {
-	// use io instead of ioutil to read stdin
-
 	content, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +58,6 @@ func main() {
 
 	// Output header row
 	fmt.Print("## Security Vulnerabilities\n\n")
-	// scanned with
 	if len(sarif.Runs) > 0 {
 		fmt.Printf("*Scanned with [%s](%s)*\n\n", sarif.Runs[0].Tool.Driver.Name, *sarif.Runs[0].Tool.Driver.InformationURI)
 
@@ -71,7 +68,6 @@ func main() {
 		}
 	}
 	fmt.Print("\n")
-
 }
 
 // Find a particular rule by ID
