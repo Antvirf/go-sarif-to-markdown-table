@@ -13,6 +13,8 @@ cat results.sarif | sarif-to-markdown-table > results.md
 ## Building the executable
 
 ```bash
-make build-mac   # mac/arm64
-make build-linux # linux/amd64
+make builds        # build all
+make build-mac     # mac/arm64
+make build-linux   # linux/amd64
+make build-windows # windows/amd64
 ```
