@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
-	"regexp"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 )
 
 func main() {
-	content, err := ioutil.ReadAll(os.Stdin)
+	// use io instead of ioutil to read stdin
+
+	content, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,24 +24,30 @@ func main() {
 	}
 
 	tw := table.NewWriter()
-	tw.AppendHeader(table.Row{"Rule ID", "CVE ID", "Severity", "Detailed explanation", "Fixed version or mitigation"})
+	tw.AppendHeader(table.Row{
+		"Rule ID",
+		// "CVE ID",
+		"Severity",
+		// "Detailed explanation",
+		"CVE Details & affected versions",
+	})
 
 	// loop through runs in the SARIF input, if multiple exist
 	for _, run := range sarif.Runs {
 		for _, result := range run.Results {
-			rule_index := getOrCreateRule(
+			ruleIndex := getOrCreateRule(
 				*result.RuleID,
 				sarif.Runs[0].Tool.Driver,
 			)
 
 			// Parse CVE ID (contained in the first set of square brackets in a string)
-			cve_id := regexp.MustCompile(`\[(.*?)\]`).FindString(*result.Message.Text)
+			// cve_id := regexp.MustCompile(`\[(.*?)\]`).FindString(*result.Message.Text)
 
 			tw.AppendRow(table.Row{
 				*result.RuleID,
-				cve_id,
-				run.Tool.Driver.Rules[rule_index].Properties["security-severity"],
-				*run.Tool.Driver.Rules[rule_index].Help.Markdown,
+				// cve_id,
+				run.Tool.Driver.Rules[ruleIndex].Properties["security-severity"],
+				// *run.Tool.Driver.Rules[rule_index].Help.Markdown,
 				*result.Message.Text,
 			})
 		}
@@ -51,8 +58,19 @@ func main() {
 		{Name: "Severity", Mode: table.DscNumeric},
 	})
 
-	// Output
-	fmt.Print(tw.RenderMarkdown())
+	// Output header row
+	fmt.Print("## Security Vulnerabilities\n\n")
+	// scanned with
+	if len(sarif.Runs) > 0 {
+		fmt.Printf("*Scanned with [%s](%s)*\n\n", sarif.Runs[0].Tool.Driver.Name, *sarif.Runs[0].Tool.Driver.InformationURI)
+
+		if len(sarif.Runs[0].Results) > 0 {
+			fmt.Print(tw.RenderMarkdown())
+		} else {
+			fmt.Print("No security vulnerabilities found.")
+		}
+	}
+	fmt.Print("\n")
 
 }
 
