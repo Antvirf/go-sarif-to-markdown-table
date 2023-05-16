@@ -21,17 +21,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tw := table.NewWriter()
-	tw.AppendHeader(table.Row{
-		"Rule ID",
-		// "CVE ID",
-		"Severity",
-		// "Detailed explanation",
-		"CVE Details & affected versions",
-	})
+	fmt.Print("## Security Vulnerabilities\n\n")
 
-	// loop through runs in the SARIF input, if multiple exist
-	for _, run := range sarif.Runs {
+	// Loop through all the runs in the SARIF input
+	for runIndex, run := range sarif.Runs {
+		tw := table.NewWriter()
+		tw.AppendHeader(table.Row{
+			"Rule ID",
+			// "CVE ID",
+			"Severity",
+			// "Detailed explanation",
+			"CVE Details & affected versions",
+		})
 		for _, result := range run.Results {
 			ruleIndex := getOrCreateRule(
 				*result.RuleID,
@@ -49,25 +50,21 @@ func main() {
 				*result.Message.Text,
 			})
 		}
-	}
+		// Sort by severity
+		tw.SortBy([]table.SortBy{
+			{Name: "Severity", Mode: table.DscNumeric},
+		})
 
-	// Sort by severity
-	tw.SortBy([]table.SortBy{
-		{Name: "Severity", Mode: table.DscNumeric},
-	})
-
-	// Output header row
-	fmt.Print("## Security Vulnerabilities\n\n")
-	if len(sarif.Runs) > 0 {
-		fmt.Printf("*Scanned with [%s](%s)*\n\n", sarif.Runs[0].Tool.Driver.Name, *sarif.Runs[0].Tool.Driver.InformationURI)
-
-		if len(sarif.Runs[0].Results) > 0 {
+		// Loop through each run
+		fmt.Printf("*Run %d: Scanned with [%s](%s)*\n\n", runIndex+1, run.Tool.Driver.Name, *run.Tool.Driver.InformationURI)
+		if len(run.Results) > 0 {
 			fmt.Print(tw.RenderMarkdown())
+			fmt.Print("\n---\n")
 		} else {
-			fmt.Print("No security vulnerabilities found.")
+			fmt.Print("No security vulnerabilities found.\n")
 		}
 	}
-	fmt.Print("\n")
+
 }
 
 // Find a particular rule by ID
