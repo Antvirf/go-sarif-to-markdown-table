@@ -9,9 +9,10 @@
 
 # Test binary, built with `go test -c` and other test files
 *.test
-test.sarif
+test-xray.sarif
 test-empty.sarif
 test-combined.sarif
+test-tfsec.sarif
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
