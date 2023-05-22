@@ -28,32 +28,30 @@ func main() {
 		tw := table.NewWriter()
 		tw.AppendHeader(table.Row{
 			"Rule ID",
-			// "CVE ID",
 			"Severity",
-			// "Detailed explanation",
-			"CVE Details & affected versions",
+			"Rule details",
+			"Location",
 		})
 		for _, result := range run.Results {
-			ruleIndex := getOrCreateRule(
+			ruleIndex, ruleIdString := getOrCreateRule(
 				*result.RuleID,
 				sarif.Runs[0].Tool.Driver,
 			)
 
-			// Parse CVE ID (contained in the first set of square brackets in a string)
-			// cve_id := regexp.MustCompile(`\[(.*?)\]`).FindString(*result.Message.Text)
-
 			tw.AppendRow(table.Row{
-				*result.RuleID,
-				// cve_id,
-				run.Tool.Driver.Rules[ruleIndex].Properties["security-severity"],
-				// *run.Tool.Driver.Rules[rule_index].Help.Markdown,
+				ruleIdString,
+				nilToEmptyStringFilter(run.Tool.Driver.Rules[ruleIndex].Properties["security-severity"]),
 				*result.Message.Text,
+				nilToEmptyStringFilter(*result.Locations[0].PhysicalLocation.ArtifactLocation.URI),
 			})
 		}
 		// Sort by severity
 		tw.SortBy([]table.SortBy{
 			{Name: "Severity", Mode: table.DscNumeric},
 		})
+
+		// Drop empty columns
+		tw.SuppressEmptyColumns()
 
 		// Loop through each run
 		fmt.Printf("*Run %d: Scanned with [%s](%s)*\n\n", runIndex+1, run.Tool.Driver.Name, *run.Tool.Driver.InformationURI)
@@ -67,12 +65,24 @@ func main() {
 
 }
 
-// Find a particular rule by ID
-func getOrCreateRule(id string, driver *sarif.ToolComponent) uint {
+// Find a particular rule by ID - return index and the ID, if helpUri exists, the ID is markdown link format
+func getOrCreateRule(id string, driver *sarif.ToolComponent) (uint, string) {
 	for i, r := range driver.Rules {
 		if r.ID == id {
-			return uint(i)
+			if r.HelpURI != nil {
+				return uint(i), fmt.Sprintf("[%s](%s)", id, *r.HelpURI)
+			} else {
+				return uint(i), fmt.Sprintf("%s", id)
+			}
 		}
 	}
-	return uint(len(driver.Rules) - 1)
+	return uint(len(driver.Rules) - 1), fmt.Sprintf("%s", id)
+}
+
+func nilToEmptyStringFilter(input interface{}) interface{} {
+	if input == nil {
+		return ""
+	} else {
+		return input
+	}
 }
